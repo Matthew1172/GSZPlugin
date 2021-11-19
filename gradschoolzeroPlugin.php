@@ -24,46 +24,7 @@ defined('ABSPATH') or die('No script kiddies please!');
 */
 function gradschoolzero_install()
 {
-  /*This is the global variable that give us connection to the wordpress database.
-It will let us call special functions and also run SQL statements
-  */
-  
-  //we only need include this wordpress file if we want to create a new table in wpdb using dbDelta()
-  //i'm not sure why we need this file yet
-  require_once(ABSPATH . '/wp-admin/includes/upgrade.php');
-  //select the wp_users and wp_posts databases. The prefix is the special name you give during installation
-  //the prefix look like this: "something_"
 
-
-//I want to put this in the themes function.php activation hook
-/*
-  //This is how our plugin automatically creates pages for our theme to use
-  $new_page_title     = __('Archive', 'text-domain'); // Page's title
-  $new_page_content   = '';                           // Content goes here
-  //the template is the actual php file in the theme with the html in it
-  $new_page_template  = 'archive.php';       // The template to use for the page
-  $page_check = get_page_by_title($new_page_title);   // Check if the page already exists
-  //This array is all he settings for the page, including post type (because pages are technically wp posts)
-  //post status is if it's visible or not, and the post author is 1 so that is the root user.
-  $new_page = array(
-    'post_type'     => 'page',
-    'post_title'    => $new_page_title,
-    'post_content'  => $new_page_content,
-    'post_status'   => 'publish',
-    'post_author'   => 1
-  );
-  // If the page doesn't already exist, create it
-  if (!isset($page_check->ID)) {
-    $new_page_id = wp_insert_post($new_page);
-    if (!empty($new_page_template)) {
-      update_post_meta($new_page_id, '_wp_page_template', $new_page_template);
-    }
-  }
-*/
-
-
-  //we call this whenever we add a table to wpdb (specifically dbDelta() function which is located in that .php file we included)
-  flush_rewrite_rules();
 }
 //This hook means call the gradschoolzero_install function when we activate the plugin.
 register_activation_hook(__FILE__, 'gradschoolzero_install');
@@ -567,6 +528,14 @@ for outputting the html in the registrar GUI.
     'default'
   );
   add_meta_box(
+    'gradschoolzero_class_days',
+    'Class days',
+    'gradschoolzero_class_days',
+    'gradschoolzeroclass',
+    'normal',
+    'default'
+  );
+  add_meta_box(
     'gradschoolzeroclass_class_prereq',
     'Class prerequisites',
     'gradschoolzeroclass_class_prereq',
@@ -576,6 +545,74 @@ for outputting the html in the registrar GUI.
   );
 }
 add_action('add_meta_boxes', 'gradschoolzero_class_metaboxes');
+
+function gradschoolzero_class_days(){
+	global $post;
+	wp_nonce_field(basename(__FILE__), 'classfields');
+	  $m = get_post_meta($post->ID, 'm', true);
+  $t = get_post_meta($post->ID, 't', true);
+  $w = get_post_meta($post->ID, 'w', true);
+  $h = get_post_meta($post->ID, 'h', true);
+  $f = get_post_meta($post->ID, 'f', true);
+  $s = get_post_meta($post->ID, 's', true);
+	echo '<fieldset>';
+	echo '<div>';
+	echo '<input type="checkbox" name="m" value="yes"';
+	checked($m, "yes");
+	echo '/>';
+	echo '<label for="m">Monday</label>';
+	echo '</div>';
+
+	echo '<div>';
+	echo '<input type="checkbox" name="t" value="yes"';
+	checked($t, "yes");
+	echo '/>';
+	echo '<label for="t">Tuesday</label>';
+	echo '</div>';
+
+	echo '<div>';
+	echo '<input type="checkbox" name="w" value="yes"';
+	checked($w, "yes");
+	echo '/>';
+	echo '<label for="w">Wednesday</label>';
+	echo '</div>';
+
+	echo '<div>';
+	echo '<input type="checkbox" name="h" value="yes"';
+	checked($h, "yes");
+	echo '/>';
+	echo '<label for="h">Thursday</label>';
+	echo '</div>';
+
+	echo '<div>';
+	echo '<input type="checkbox" name="f" value="yes"';
+	checked($f, "yes");
+	echo '/>';
+	echo '<label for="f">Friday</label>';
+	echo '</div>';
+
+	echo '<div>';
+	echo '<input type="checkbox" name="s" value="yes"';
+	checked($s, "yes");
+	echo '/>';
+	echo '<label for="s">Saturday</label>';
+	echo '</div>';
+
+	echo '</fieldset>';
+	
+	
+	  echo '<fieldset>';
+  $startTime = get_post_meta($post->ID, 'startTime', true);
+  echo '<label for="startTime">Starting time</label>';
+  echo '<input type="time" name="startTime" value="' . esc_textarea($startTime)  . '" class="widefat">';
+  echo '</fieldset>';
+
+  echo '<fieldset>';
+  $endTime = get_post_meta($post->ID, 'endTime', true);
+  echo '<label for="endTime">Ending time</label>';
+  echo '<input type="time" name="endTime" value="' . esc_textarea($endTime)  . '" class="widefat">';
+  echo '</fieldset>';
+}
 
 /**
  * Output the HTML for the gradschoolzeroclass info metaboxes.
@@ -604,18 +641,7 @@ function gradschoolzero_class_info()
   echo '<label for="cap">Capacity</label>';
   echo '<input type="text" name="cap" value="' . esc_textarea($cap)  . '" class="widefat">';
   echo '</fieldset>';
-
-  echo '<fieldset>';
-  $startTime = get_post_meta($post->ID, 'startTime', true);
-  echo '<label for="startTime">Starting time</label>';
-  echo '<input type="time" name="startTime" value="' . esc_textarea($startTime)  . '" class="widefat">';
-  echo '</fieldset>';
-
-  echo '<fieldset>';
-  $endTime = get_post_meta($post->ID, 'endTime', true);
-  echo '<label for="endTime">Ending time</label>';
-  echo '<input type="time" name="endTime" value="' . esc_textarea($endTime)  . '" class="widefat">';
-  echo '</fieldset>';
+  
 
   echo '<fieldset>';
   $startDate = get_post_meta($post->ID, 'startDate', true);
@@ -691,6 +717,13 @@ function gradschoolzero_save_class_meta($post_id, $post)
   $class_meta['startDate'] = esc_textarea($_POST['startDate']);
   $class_meta['endDate'] = esc_textarea($_POST['endDate']);
   $class_meta['loc'] = esc_textarea($_POST['loc']);
+  
+  $class_meta['m'] = esc_textarea($_POST['m']);
+  $class_meta['t'] = esc_textarea($_POST['t']);
+  $class_meta['w'] = esc_textarea($_POST['w']);
+  $class_meta['h'] = esc_textarea($_POST['h']);
+  $class_meta['f'] = esc_textarea($_POST['f']);
+  $class_meta['s'] = esc_textarea($_POST['s']);
 
 
   global $wpdb;
