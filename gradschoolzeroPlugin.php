@@ -1105,15 +1105,32 @@ function wporg_usermeta_form_field($user)
 		$user_meta=get_userdata($uid);
 		$user_roles=$user_meta->roles;
 		$warn = esc_attr(get_user_meta($uid, 'warn', true));
+		$egpa = floatval(esc_attr(get_user_meta($uid, 'egpa', true)));
 	}else{
 		$phase = 'csp';
 		//$hr = 'nhr';
 		$status = 'mat';
 		$user_roles = array();
 		$warn = 0;
+		$egpa = 0.0;
 	}
+	
+	echo '<div style="background-color: #aed9e9;">';
+	echo '<h2>Grad School Zero information</h2>';
+	
+	//entrance gpa field
+	echo '<table class="form-table">';
+		echo '<tr>';
+			echo '<th>';
+				echo '<label for="egpa">Entrance GPA</label>';
+			echo '</th>';
+			echo '<td>';
+				echo "<input type='text' name='egpa' value='$egpa'>";
+			echo '</td>';
+		echo '</tr>';
+	echo '</table>';
 
-	echo '<h3>Warnings</h3>';
+
 	echo '<table class="form-table">';
 	echo '<tr>';
 	
@@ -1155,7 +1172,6 @@ function wporg_usermeta_form_field($user)
 
 
 	
-	echo '<h3>Phase</h3>';
 	echo '<table class="form-table">';
 	echo '<tr>';
 	
@@ -1196,7 +1212,6 @@ function wporg_usermeta_form_field($user)
 	
 
 	//add status dropdown for students and a different status dropdown for instructors
-	echo '<h3>Status</h3>';
 	echo '<table class="form-table">';
 	echo '<tr>';
 
@@ -1252,180 +1267,6 @@ function wporg_usermeta_form_field($user)
 
 	echo '</tr>';
 	echo '</table>';
-
-	//Add enrollment status to classes for this student, also add grades for these classes if necessary
-	echo '<h3>Student enrollment</h3>';
-	echo '<table class="form-table">';
-	$classes_query = array('post_type' => 'gradschoolzeroclass');
-	$q = new WP_Query($classes_query);
-	if($q->have_posts()){
-		while($q->have_posts()){
-			$q->the_post();
-			$enrollment_key = str_replace(" ", "", strtolower(get_the_title())) . "_enrollment";
-			$grade_key = str_replace(" ", "", strtolower(get_the_title())) . "_grade";
-			
-			//If this is a new user, set the default enrollment status to not-enrolled
-			if(isset($uid)){
-				$en = get_user_meta($uid, $enrollment_key, true);
-				$gr = get_user_meta($uid, $grade_key, true);
-			}
-			else{
-				$en = "ne";
-				$gr = "na";
-			}
-			
-			echo '<tr>';
-			echo '<th>Enroll student in class: '.get_the_title().'</th>';
-			echo '<th>Assign grade</th>';
-			echo '</tr>';
-
-			echo '<tr>';
-				echo '<td>';
-				echo '<select name="'.$enrollment_key.'" class="postbox">';
-
-				echo '<option value="ne" '; 
-				selected($en, 'ne');
-				echo '>not-enrolled</option>';
-
-				echo '<option value="e" '; 
-				selected($en, 'e'); 
-				echo '>enrolled</option>';
-				
-				echo '<option value="wl" '; 
-				selected($en, 'wl'); 
-				echo '>wait listed</option>';
-				
-				echo '</select>';
-				echo '</td>';
-
-				echo '<td>';
-				echo '<select name="'.$grade_key.'" class="postbox">';
-
-				echo '<option value="na" '; 
-				selected($gr, 'na');
-				echo '>N/A</option>';
-
-				echo '<option value="ap" ';
-				selected($gr, 'ap'); 
-				echo '>A+</option>';
-
-				echo '<option value="a" '; 
-				selected($gr, 'a');
-				echo '>A</option>';
-
-				echo '<option value="am" '; 
-				selected($gr, 'am');
-				echo '>A-</option>';
-				
-				echo '<option value="bp" ';
-				selected($gr, 'bp'); 
-				echo '>B+</option>';
-
-				echo '<option value="b" '; 
-				selected($gr, 'b');
-				echo '>B</option>';
-
-				echo '<option value="bm" '; 
-				selected($gr, 'bm');
-				echo '>B-</option>';
-				
-				echo '<option value="cp" ';
-				selected($gr, 'cp'); 
-				echo '>C+</option>';
-
-				echo '<option value="c" '; 
-				selected($gr, 'c');
-				echo '>C</option>';
-
-				echo '<option value="cm" '; 
-				selected($gr, 'cm');
-				echo '>C-</option>';
-				
-				echo '<option value="d" ';
-				selected($gr, 'd'); 
-				echo '>D</option>';
-
-				echo '<option value="f" '; 
-				selected($gr, 'f');
-				echo '>F</option>';
-
-				echo '<option value="cr" '; 
-				selected($gr, 'cr');
-				echo '>CR</option>';
-				
-				echo '<option value="ncr" '; 
-				selected($gr, 'ncr');
-				echo '>NCR</option>';
-				
-				echo '<option value="w" '; 
-				selected($gr, 'w');
-				echo '>W</option>';
-				
-				echo '</select>';
-				echo '</td>';
-			echo '</tr>';
-			
-		}
-	}
-	echo '</table>';
-	
-	
-	
-	
-	
-	
-	
-	
-	//add classes, grades, and attempts to a students transcript
-	echo '<h3>Add to students transcript</h3>';
-	echo '<table class="form-table">';	
-	//we will use the class name_enrollment as the meta_key for enrollment value (e, ne) because the class names are UNIQUE.
-	$classes_query = array('post_type' => 'gradschoolzeroclass');
-	$q = new WP_Query($classes_query);
-	if($q->have_posts()){
-		while($q->have_posts()){
-			$q->the_post();
-			$transcript_key = str_replace(" ", "", strtolower(get_the_title())) . "_transcript";
-			$fgrade_key = str_replace(" ", "", strtolower(get_the_title())) . "_fgrade";
-			echo '<tr>';
-			echo '<th>Add class to student transcript: '.get_the_title().'</th>';
-			echo '<th>Add grade</th>';
-			echo '</tr>';
-			
-			echo '<tr>';
-			echo '<td>';
-			echo '<select name="'.$transcript_key.'" class="postbox">';
-			echo '<option value="dnac">do not add class</option>';
-			echo '<option value="ac">add class</option>';
-			echo '</select>';
-			echo '</td>';
-			
-			echo '<td>';
-			echo '<select name="'.$fgrade_key.'" class="postbox">';
-			echo '<option value="na">N/A</option>';
-			echo '<option value="ap">A+</option>';
-			echo '<option value="a">A</option>';
-			echo '<option value="am">A-</option>';
-			echo '<option value="bp">B+</option>';
-			echo '<option value="b">B</option>';
-			echo '<option value="bm">B-</option>';
-			echo '<option value="cp">C+</option>';			
-			echo '<option value="c">C</option>';
-			echo '<option value="cm">C-</option>';
-			echo '<option value="d">D</option>';
-			echo '<option value="f">F</option>';
-			echo '<option value="cr">CR</option>';
-			echo '<option value="ncr">NCR</option>';
-			echo '<option value="w">W</option>';			
-			echo '</select>';
-			echo '</td>';
-			echo '</tr>';
-		}
-	}
-	echo '</table>';
-	
-	
-	
 	
 	
 	//display students transcript and grades for those classes, number of attempts
@@ -1559,10 +1400,179 @@ function wporg_usermeta_form_field($user)
 	}else{
 		echo '<h3>This student has no classes on their transcript that affect their gpa, or they have no classes on their transcript.</h3>';
 	}
+	
+	echo'<hr>';
+	
+	//Add enrollment status to classes for this student, also add grades for these classes if necessary
+	echo '<h3>Student enrollment</h3>';
+	echo '<table class="form-table">';
+	$classes_query = array('post_type' => 'gradschoolzeroclass');
+	$q = new WP_Query($classes_query);
+	if($q->have_posts()){
+		while($q->have_posts()){
+			$q->the_post();
+			$enrollment_key = str_replace(" ", "", strtolower(get_the_title())) . "_enrollment";
+			$grade_key = str_replace(" ", "", strtolower(get_the_title())) . "_grade";
+			
+			//If this is a new user, set the default enrollment status to not-enrolled
+			if(isset($uid)){
+				$en = get_user_meta($uid, $enrollment_key, true);
+				$gr = get_user_meta($uid, $grade_key, true);
+			}
+			else{
+				$en = "ne";
+				$gr = "na";
+			}
+			
+			echo '<tr>';
+			echo '<th>Enroll student in class: '.get_the_title().'</th>';
+			echo '<th>Assign grade</th>';
+			echo '</tr>';
 
+			echo '<tr>';
+				echo '<td>';
+				echo '<select name="'.$enrollment_key.'" class="postbox">';
+
+				echo '<option value="ne" '; 
+				selected($en, 'ne');
+				echo '>not-enrolled</option>';
+
+				echo '<option value="e" '; 
+				selected($en, 'e'); 
+				echo '>enrolled</option>';
+				
+				echo '<option value="wl" '; 
+				selected($en, 'wl'); 
+				echo '>wait listed</option>';
+				
+				echo '</select>';
+				echo '</td>';
+
+				echo '<td>';
+				echo '<select name="'.$grade_key.'" class="postbox">';
+
+				echo '<option value="na" '; 
+				selected($gr, 'na');
+				echo '>N/A</option>';
+
+				echo '<option value="ap" ';
+				selected($gr, 'ap'); 
+				echo '>A+</option>';
+
+				echo '<option value="a" '; 
+				selected($gr, 'a');
+				echo '>A</option>';
+
+				echo '<option value="am" '; 
+				selected($gr, 'am');
+				echo '>A-</option>';
+				
+				echo '<option value="bp" ';
+				selected($gr, 'bp'); 
+				echo '>B+</option>';
+
+				echo '<option value="b" '; 
+				selected($gr, 'b');
+				echo '>B</option>';
+
+				echo '<option value="bm" '; 
+				selected($gr, 'bm');
+				echo '>B-</option>';
+				
+				echo '<option value="cp" ';
+				selected($gr, 'cp'); 
+				echo '>C+</option>';
+
+				echo '<option value="c" '; 
+				selected($gr, 'c');
+				echo '>C</option>';
+
+				echo '<option value="cm" '; 
+				selected($gr, 'cm');
+				echo '>C-</option>';
+				
+				echo '<option value="d" ';
+				selected($gr, 'd'); 
+				echo '>D</option>';
+
+				echo '<option value="f" '; 
+				selected($gr, 'f');
+				echo '>F</option>';
+
+				echo '<option value="cr" '; 
+				selected($gr, 'cr');
+				echo '>CR</option>';
+				
+				echo '<option value="ncr" '; 
+				selected($gr, 'ncr');
+				echo '>NCR</option>';
+				
+				echo '<option value="w" '; 
+				selected($gr, 'w');
+				echo '>W</option>';
+				
+				echo '</select>';
+				echo '</td>';
+			echo '</tr>';
+			
+		}
+	}
+	echo '</table>';
+	
+	echo'<hr>';
+	
+	//add classes, grades, and attempts to a students transcript
+	echo '<h3>Add to students transcript</h3>';
+	echo '<table class="form-table">';	
+	//we will use the class name_enrollment as the meta_key for enrollment value (e, ne) because the class names are UNIQUE.
+	$classes_query = array('post_type' => 'gradschoolzeroclass');
+	$q = new WP_Query($classes_query);
+	if($q->have_posts()){
+		while($q->have_posts()){
+			$q->the_post();
+			$transcript_key = str_replace(" ", "", strtolower(get_the_title())) . "_transcript";
+			$fgrade_key = str_replace(" ", "", strtolower(get_the_title())) . "_fgrade";
+			echo '<tr>';
+			echo '<th>Add class to student transcript: '.get_the_title().'</th>';
+			echo '<th>Add grade</th>';
+			echo '</tr>';
+			
+			echo '<tr>';
+			echo '<td>';
+			echo '<select name="'.$transcript_key.'" class="postbox">';
+			echo '<option value="dnac">do not add class</option>';
+			echo '<option value="ac">add class</option>';
+			echo '</select>';
+			echo '</td>';
+			
+			echo '<td>';
+			echo '<select name="'.$fgrade_key.'" class="postbox">';
+			echo '<option value="na">N/A</option>';
+			echo '<option value="ap">A+</option>';
+			echo '<option value="a">A</option>';
+			echo '<option value="am">A-</option>';
+			echo '<option value="bp">B+</option>';
+			echo '<option value="b">B</option>';
+			echo '<option value="bm">B-</option>';
+			echo '<option value="cp">C+</option>';			
+			echo '<option value="c">C</option>';
+			echo '<option value="cm">C-</option>';
+			echo '<option value="d">D</option>';
+			echo '<option value="f">F</option>';
+			echo '<option value="cr">CR</option>';
+			echo '<option value="ncr">NCR</option>';
+			echo '<option value="w">W</option>';			
+			echo '</select>';
+			echo '</td>';
+			echo '</tr>';
+		}
+	}
+	echo '</table>';
+	
 
 	//if the user is not a student (if they're an instructor or a newly added user, display this table)
 	if(!in_array('student', $user_roles)){
+		echo'<hr>';
 		//Assign this instructor to classes
 		echo '<h3>Instructor assignments</h3>';
 		echo '<table class="form-table">';
@@ -1602,6 +1612,8 @@ function wporg_usermeta_form_field($user)
 		}
 		echo '</table>';
 	}
+	
+	echo '</div>';
 
 }
   
@@ -1617,7 +1629,16 @@ function wporg_usermeta_form_field_update($user_id){
     if ( ! current_user_can('edit_user', $user_id)) return false;
 	$arr = array();
 
-	// create/update user meta warnings for the $user_id
+
+	//create/update user meta entrance gpa
+    $ret_uid = update_user_meta(
+        $user_id,
+        'egpa',
+        $_POST['egpa']
+    );
+	array_push($arr, $ret_uid);
+
+	//create/update user meta warnings
 	$ret_uid = update_user_meta(
 		$user_id,
 		'warn',
@@ -1625,7 +1646,7 @@ function wporg_usermeta_form_field_update($user_id){
 	);
 	array_push($arr, $ret_uid);
 
-    // create/update user meta for the $user_id
+    //create/update user meta phase
     $ret_uid = update_user_meta(
         $user_id,
         'phase',
@@ -1633,14 +1654,14 @@ function wporg_usermeta_form_field_update($user_id){
     );
 	array_push($arr, $ret_uid);
 	
-	// create/update user meta for the $user_id
+	//create/update user meta status
     $ret_uid = update_user_meta(
         $user_id,
         'status',
         $_POST['status']
     );
 	array_push($arr, $ret_uid);
-
+	
 	
 	
 	/*
