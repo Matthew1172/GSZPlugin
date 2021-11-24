@@ -1403,7 +1403,7 @@ function wporg_usermeta_form_field($user)
 	
 	echo'<hr>';
 	
-	//Add enrollment status to classes for this student, also add grades for these classes if necessary
+	//Add enrollment status to classes for this student, also add grades
 	echo '<h3>Student enrollment</h3>';
 	echo '<table class="form-table">';
 	$classes_query = array('post_type' => 'gradschoolzeroclass');
@@ -1431,87 +1431,87 @@ function wporg_usermeta_form_field($user)
 
 			echo '<tr>';
 				echo '<td>';
-				echo '<select name="'.$enrollment_key.'" class="postbox">';
+					echo '<select name="'.$enrollment_key.'" class="postbox">';
 
-				echo '<option value="ne" '; 
-				selected($en, 'ne');
-				echo '>not-enrolled</option>';
+					echo '<option value="ne" '; 
+					selected($en, 'ne');
+					echo '>not-enrolled</option>';
 
-				echo '<option value="e" '; 
-				selected($en, 'e'); 
-				echo '>enrolled</option>';
-				
-				echo '<option value="wl" '; 
-				selected($en, 'wl'); 
-				echo '>wait listed</option>';
-				
-				echo '</select>';
+					echo '<option value="e" '; 
+					selected($en, 'e'); 
+					echo '>enrolled</option>';
+					
+					echo '<option value="wl" '; 
+					selected($en, 'wl'); 
+					echo '>wait listed</option>';
+					
+					echo '</select>';
 				echo '</td>';
 
 				echo '<td>';
-				echo '<select name="'.$grade_key.'" class="postbox">';
+					echo '<select name="'.$grade_key.'" class="postbox">';
 
-				echo '<option value="na" '; 
-				selected($gr, 'na');
-				echo '>N/A</option>';
+					echo '<option value="na" '; 
+					selected($gr, 'na');
+					echo '>N/A</option>';
 
-				echo '<option value="ap" ';
-				selected($gr, 'ap'); 
-				echo '>A+</option>';
+					echo '<option value="ap" ';
+					selected($gr, 'ap'); 
+					echo '>A+</option>';
 
-				echo '<option value="a" '; 
-				selected($gr, 'a');
-				echo '>A</option>';
+					echo '<option value="a" '; 
+					selected($gr, 'a');
+					echo '>A</option>';
 
-				echo '<option value="am" '; 
-				selected($gr, 'am');
-				echo '>A-</option>';
-				
-				echo '<option value="bp" ';
-				selected($gr, 'bp'); 
-				echo '>B+</option>';
+					echo '<option value="am" '; 
+					selected($gr, 'am');
+					echo '>A-</option>';
+					
+					echo '<option value="bp" ';
+					selected($gr, 'bp'); 
+					echo '>B+</option>';
 
-				echo '<option value="b" '; 
-				selected($gr, 'b');
-				echo '>B</option>';
+					echo '<option value="b" '; 
+					selected($gr, 'b');
+					echo '>B</option>';
 
-				echo '<option value="bm" '; 
-				selected($gr, 'bm');
-				echo '>B-</option>';
-				
-				echo '<option value="cp" ';
-				selected($gr, 'cp'); 
-				echo '>C+</option>';
+					echo '<option value="bm" '; 
+					selected($gr, 'bm');
+					echo '>B-</option>';
+					
+					echo '<option value="cp" ';
+					selected($gr, 'cp'); 
+					echo '>C+</option>';
 
-				echo '<option value="c" '; 
-				selected($gr, 'c');
-				echo '>C</option>';
+					echo '<option value="c" '; 
+					selected($gr, 'c');
+					echo '>C</option>';
 
-				echo '<option value="cm" '; 
-				selected($gr, 'cm');
-				echo '>C-</option>';
-				
-				echo '<option value="d" ';
-				selected($gr, 'd'); 
-				echo '>D</option>';
+					echo '<option value="cm" '; 
+					selected($gr, 'cm');
+					echo '>C-</option>';
+					
+					echo '<option value="d" ';
+					selected($gr, 'd'); 
+					echo '>D</option>';
 
-				echo '<option value="f" '; 
-				selected($gr, 'f');
-				echo '>F</option>';
+					echo '<option value="f" '; 
+					selected($gr, 'f');
+					echo '>F</option>';
 
-				echo '<option value="cr" '; 
-				selected($gr, 'cr');
-				echo '>CR</option>';
-				
-				echo '<option value="ncr" '; 
-				selected($gr, 'ncr');
-				echo '>NCR</option>';
-				
-				echo '<option value="w" '; 
-				selected($gr, 'w');
-				echo '>W</option>';
-				
-				echo '</select>';
+					echo '<option value="cr" '; 
+					selected($gr, 'cr');
+					echo '>CR</option>';
+					
+					echo '<option value="ncr" '; 
+					selected($gr, 'ncr');
+					echo '>NCR</option>';
+					
+					echo '<option value="w" '; 
+					selected($gr, 'w');
+					echo '>W</option>';
+					
+					echo '</select>';
 				echo '</td>';
 			echo '</tr>';
 			
