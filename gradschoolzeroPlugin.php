@@ -995,85 +995,239 @@ function bulk_change_phase_pgp($bulk_actions) {
 }
 add_filter('bulk_actions-users', 'bulk_change_phase_pgp');
 
-function handle_bulk_change_phase_pgp($redirect_url, $action, $user_ids) {
-	if ($action == 'phase-pgp') {
-		foreach ($user_ids as $uid) {
-			/*
-			Here we can pull all the classes and grades a user is assigned to and add them to their transcript,
-			Basically we can do all of (6) here.
-			*/
-
-			//Here we want to: 
-			//1. grab all the classes the student is currently enrolled in, and the grades for those classes, 
-			//2. add them to their transcript, 
-			//3. un-enroll them from those classes.
-
-			//we have to loop through all posts and check if this student is enrolled
-			$classes_query = array('post_type' => 'gradschoolzeroclass');
-			$q = new WP_Query($classes_query);
-			if($q->have_posts()){
-				while($q->have_posts()){
-					$q->the_post();
-					$enrollment_key = str_replace(" ", "", strtolower(get_the_title())) . "_enrollment";
-					$grade_key = str_replace(" ", "", strtolower(get_the_title())) . "_grade";
-					$transcript_key = str_replace(" ", "", strtolower(get_the_title())) . "_transcript";
-					$fgrade_key = str_replace(" ", "", strtolower(get_the_title())) . "_fgrade";
-					
-					$en = get_user_meta($uid, $enrollment_key, true);
-
-					//check if student is enrolled
-					if($en == 'e'){
-						//the student is enrolled, get the grade for this class
-						$gr = get_user_meta($uid, $grade_key, true);
-
-						//add this class and grade to the transcript
-						//We have to check how many times the user has taken this class
-						$hm = 0;
-						//loop through i : 0 -> 4 and check the user meta data for <<classTitle>_transcript_<attempt>> where <attempt> = i
-						for($i = 1; $i < 5; $i++){
-							if(get_user_meta($uid, $transcript_key."_".strval($i), true) == "taken"){
-								//The student has taken this class before, add to the number of attempts
-								$hm++;
-							}
-						}
-
-						//add 1 to the number of attempts
-						$a = $hm+1;
-					
-						if($hm < 5){
-							//the student has taken this class less then five times, so we can add this attempt	
-							$ret_uid = add_user_meta(
-								$uid,
-								$transcript_key."_".strval($a),
-								"taken",
-								true
-							);
-							$ret_uid = add_user_meta(
-								$uid,
-								$fgrade_key."_".strval($a),
-								$gr,
-								true
-							);
+function classGpas($uid, $user_ids){
+	//UPDATE:
+	//We want to get the class gpa of a given instructor and issue a warning accordingly.
+	//we have to loop through all posts and check if this instructor is assigned to it
+	//Also issue a warning if the instructor hasn't filled out grade for all students
 	
-							//finally we have to update the enrollment status of this student on this class
-							$ret_uid = update_user_meta(
-								$uid,
-								$enrollment_key,
-								'ne'
-							);
-							$ret_uid = update_user_meta(
-								$uid,
-								$grade_key,
-								'na'
-							);
-						}else{
-							//this is the students 5th+ attempt so we cannot add this class&grade to their transcript.
-							//I'm not sure what to do here but definitely don't add this attempt.
+	$not_complete = false;
+	$class_grades = array();
+	$classes_query = array('post_type' => 'gradschoolzeroclass');
+	$q = new WP_Query($classes_query);
+	if($q->have_posts()){
+		while($q->have_posts()){
+			$q->the_post();
+			$title = get_the_title();
+			$assignment_key = str_replace(" ", "", strtolower($title)) . "_assignment";
+			$as = get_user_meta($uid, $assignment_key, true);
+			if($as == 'a'){
+				//the instructor is assigned to this class, so get all the sudents that are enrolled in this class.
+				foreach ($user_ids as $st_uid){		
+					$enrollment_key = str_replace(" ", "", strtolower($title)) . "_enrollment";
+					$grade_key = str_replace(" ", "", strtolower($title)) . "_grade";
+					//get the enrollment status assigned for this user
+					$en = get_user_meta($st_uid, $enrollment_key, true);
+					//check if this user is enrolled to this class
+					if ($en == 'e') {
+						//the student is enrolled in this class, so get their grade. If their grade is N/A then set not_complete flag to be true
+						$gr = get_user_meta($st_uid, $grade_key, true);
+						switch($gr){
+							case 'na':
+								//grade not set for this user. set not complete flag to be true
+								$not_complete = true;
+							default:
+								//grade is set, add it and the id of the student to class grades dictionary
+								$class_grades[$st_uid] = $gr;
+								break;
 						}
 					}
 				}
 			}
-			//change the phase to post grading period
+		}
+	}
+	if($not_complete){
+		//instructor hasn't completed all grades, issue a warning
+		$warn = absint(get_user_meta($uid, 'warn', true));
+		if($warn > 4){
+			//this user already has 5 warnings so don't do anything
+		}else{
+			$warn++;
+			$ret_uid = update_user_meta($uid, 'warn', $warn);
+		}
+	}
+	//calculate average for all grades in class grades dictionary
+	$avg = 0.0;
+	$gp = 0.0;
+	$numOfFactors = 0.0;
+	if(count($class_grades) > 0){
+		foreach($class_grades as $id => $grade_dirty){
+			switch($grade_dirty){
+				case 'na':
+					break;
+				case 'w':
+					break;
+				case 'ncr':
+					break;
+				case 'cr':
+					break;
+				case 'f':
+					$gp += 0.0;
+					$numOfFactors += 1.0;
+					break;
+				case 'd':
+					$gp += 1.0;
+					$numOfFactors += 1.0;
+					break;
+				case 'cm':
+					$gp += 1.7;
+					$numOfFactors += 1.0;
+					break;
+				case 'c':
+					$gp += 2.0;
+					$numOfFactors += 1.0;
+					break;
+				case 'cp':
+					$gp += 2.3;
+					$numOfFactors += 1.0;
+					break;
+				case 'bm':
+					$gp += 2.7;
+					$numOfFactors += 1.0;
+					break;
+				case 'b':
+					$gp += 3.0;
+					$numOfFactors += 1.0;
+					break;
+				case 'bp':
+					$gp += 3.3;
+					$numOfFactors += 1.0;
+					break;
+				case 'am':
+					$gp += 3.7;
+					$numOfFactors += 1.0;
+					break;
+				case 'a':
+					$gp += 4.0;
+					$numOfFactors += 1.0;
+					break;
+				case 'ap':
+					$gp += 4.0;
+					$numOfFactors += 1.0;
+					break;
+			}
+		}
+	}
+	//Get the class average
+	if($numOfFactors > 0){
+		$class_gpa = $gp/$numOfFactors;
+		//issue a warning if the class gpa is above 3.5 or below 2.5
+		if($class_gpa > 3.5 || $class_gpa < 2.5){
+			//issue a warning
+			$warn = absint(get_user_meta($uid, 'warn', true));
+			if($warn > 4){
+				//this user already has 5 warnings so don't do anything
+			}else{
+				$warn++;
+				$ret_uid = update_user_meta($uid, 'warn', $warn);
+			}
+		}
+	}else{
+		//all student grades are either na, w, ncr, or cr, so do nothing
+	}
+}
+
+function addToTranscript($uid){
+	/*
+	Here we can pull all the classes and grades a user is assigned to and add them to their transcript,
+	Basically we can do all of (6) here.
+	*/
+
+	//Here we want to: 
+	//1. grab all the classes the student is currently enrolled in, and the grades for those classes, 
+	//2. add them to their transcript, 
+	//3. un-enroll them from those classes.
+	//we have to loop through all posts and check if this student is enrolled
+	$classes_query = array('post_type' => 'gradschoolzeroclass');
+	$q = new WP_Query($classes_query);
+	if($q->have_posts()){
+		while($q->have_posts()){
+			$q->the_post();
+			$enrollment_key = str_replace(" ", "", strtolower(get_the_title())) . "_enrollment";
+			$grade_key = str_replace(" ", "", strtolower(get_the_title())) . "_grade";
+			$transcript_key = str_replace(" ", "", strtolower(get_the_title())) . "_transcript";
+			$fgrade_key = str_replace(" ", "", strtolower(get_the_title())) . "_fgrade";
+			
+			$en = get_user_meta($uid, $enrollment_key, true);
+
+			//check if student is enrolled
+			if($en == 'e'){
+				//the student is enrolled, get the grade for this class
+				$gr = get_user_meta($uid, $grade_key, true);
+
+				//add this class and grade to the transcript
+				//We have to check how many times the user has taken this class
+				$hm = 0;
+				//loop through i : 0 -> 4 and check the user meta data for <<classTitle>_transcript_<attempt>> where <attempt> = i
+				for($i = 1; $i < 5; $i++){
+					if(get_user_meta($uid, $transcript_key."_".strval($i), true) == "taken"){
+						//The student has taken this class before, add to the number of attempts
+						$hm++;
+					}
+				}
+
+				//add 1 to the number of attempts
+				$a = $hm+1;
+			
+				if($hm < 5){
+					//the student has taken this class less then five times, so we can add this attempt	
+					$ret_uid = add_user_meta(
+						$uid,
+						$transcript_key."_".strval($a),
+						"taken",
+						true
+					);
+					$ret_uid = add_user_meta(
+						$uid,
+						$fgrade_key."_".strval($a),
+						$gr,
+						true
+					);
+
+					//finally we have to update the enrollment status of this student on this class
+					$ret_uid = update_user_meta(
+						$uid,
+						$enrollment_key,
+						'ne'
+					);
+					$ret_uid = update_user_meta(
+						$uid,
+						$grade_key,
+						'na'
+					);
+				}else{
+					//this is the students 5th+ attempt so we cannot add this class&grade to their transcript.
+					//I'm not sure what to do here but definitely don't add this attempt.
+				}
+			}
+		}
+	}
+}
+
+function handle_bulk_change_phase_pgp($redirect_url, $action, $user_ids) {
+	if ($action == 'phase-pgp') {
+		//we need three loops. 
+		//First loop goes through instructors courses and finds class gpas, issues warnings accordingly.
+		foreach ($user_ids as $uid) {
+			$info = get_userdata($uid);
+			$role = $info ? $info->roles[0] : 'none';
+			if($role == 'instructor'){
+				//find class gpas
+				classGpas($uid, $user_ids);
+			}
+		}
+		//Second loop goes through students and moves their enrolled classes to their transcript.
+		foreach ($user_ids as $uid) {
+			$info = get_userdata($uid);
+			$role = $info ? $info->roles[0] : 'none';
+			if($role == 'student'){
+				//drop student classes and add to their transcript
+				addToTranscript($uid);
+			}
+		}
+		
+		//Finally, change the phase to post grading period
+		foreach($user_ids as $uid){
 			update_user_meta(
 				$uid,
 				'phase', 
@@ -1085,10 +1239,6 @@ function handle_bulk_change_phase_pgp($redirect_url, $action, $user_ids) {
 	return $redirect_url;
 }
 add_filter('handle_bulk_actions-users', 'handle_bulk_change_phase_pgp', 10, 3);
-
-
-
-
 
 /**
  * The field on the editing screens.
@@ -1233,6 +1383,10 @@ function wporg_usermeta_form_field($user)
 		echo'<option value="exp" ';
 		selected($status, 'exp'); 
 		echo '>Expelled</option>';
+		
+		echo'<option value="alu" ';
+		selected($status, 'alu'); 
+		echo '>Alumni</option>';
 	}else if(in_array('instructor', $user_roles)){
 		echo'<option value="emp" '; 
 		selected($status, 'emp'); 
@@ -1365,7 +1519,7 @@ function wporg_usermeta_form_field($user)
 								$numOfFactors += 1.0;
 								$gf_p = 'A+';
 								break;
-							}
+						}
 						
 						echo '<tr>';
 						echo '<td>'.get_the_title().'</td>';
