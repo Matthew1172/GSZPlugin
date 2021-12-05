@@ -629,7 +629,7 @@ function gradschoolzero_class_info()
   $s = 0;
   $n = 0;
   foreach ( $comments as $comment ):
-    $s += absint(get_comment_meta($comment->comment_ID, 'rat', true));
+    $s += absint(get_comment_meta($comment->comment_ID, 'rating', true));
     $n+=1;
   endforeach;
   if($n > 0) echo '<h1>Average class rating: '.$s/$n.'/5</h1>';
@@ -793,7 +793,7 @@ add_action('save_post', 'gradschoolzero_save_class_meta', 1, 2);
 
 function add_rating_meta($comment) {
   $user = get_current_user_id();
-  $rat = get_comment_meta($comment->comment_ID, 'rat', true);
+  $rat = get_comment_meta($comment->comment_ID, 'rating', true);
   echo '<label for="rat">Rating</label>';
   echo '<fieldset>';
 
@@ -828,12 +828,12 @@ function save_comment_rating($comment_content) {
   $user = get_current_user_id();
   $rat = absint($_POST['rat']);
   $comment_ID = absint($_POST['comment_ID']);
-  if (get_comment_meta($comment_ID, 'rat', true)) {
+  if (get_comment_meta($comment_ID, 'rating', true)) {
     // If the custom field already has a value, update it.
-    update_comment_meta($comment_ID, 'rat', $rat);
+    update_comment_meta($comment_ID, 'rating', $rat);
   } else {
     // If the custom field doesn't have a value, add it.
-    add_comment_meta($comment_ID, 'rat', $rat, $unique = true);
+    add_comment_meta($comment_ID, 'rating', $rat, $unique = true);
   }
 }
 add_filter('comment_save_pre', 'save_comment_rating' );
