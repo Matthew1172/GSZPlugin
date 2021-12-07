@@ -194,7 +194,8 @@ function gradschoolzero_setup_post_type()
   $supports = array(
     'title',
     'editor',
-    'revisions'
+    'revisions',
+    'author'
   );
   $args = array(
     'labels'               => $labels,
