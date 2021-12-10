@@ -1,5 +1,7 @@
 # GSZPlugin
- A graduate school Wordpress plugin for a website.
+ A graduate school Wordpress plugin for the Grad School Zero website.
+ 
+Grad School Zero is a college graduate program management application developed by Team M, capable of administering existing and incoming students, instructors, and registrar employees. It includes key features such as a class enrollment system, a class rating system, a user complaint system, and a grading system.
  
 ## **Usage**
 
